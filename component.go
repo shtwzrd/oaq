@@ -16,7 +16,7 @@ import (
 // you from having to put any wiring or clerical logic in the struct.
 type BaseComponent struct {
 	entity      *Entity
-	subscribers []chan *uuid.UUID
+	subscribers []chan uuid.UUID
 	id          *uuid.UUID
 }
 
@@ -50,16 +50,16 @@ func (bc *BaseComponent) setEntity(en *Entity) (err error) {
 // receive a channel the Component can use to send its UUID to the Processor
 // whenever Notify is fired. Subscribe is lazy-initialized -- no slice of
 // channels is created until a Processor has subscribed to the Component.
-func (bc *BaseComponent) Subscribe() chan *uuid.UUID {
+func (bc *BaseComponent) Subscribe() chan uuid.UUID {
 	if bc.subscribers == nil {
-		bc.subscribers = make([]chan *uuid.UUID, 0)
+		bc.subscribers = make([]chan uuid.UUID, 0)
 	}
 
 	//Add our new subscriber
-	var ch chan *uuid.UUID
+	var ch chan uuid.UUID
 	bc.subscribers = append(bc.subscribers, ch)
 	//And initialize the channel for our subscriber
-	bc.subscribers[len(bc.subscribers)-1] = make(chan *uuid.UUID)
+	bc.subscribers[len(bc.subscribers)-1] = make(chan uuid.UUID)
 	return bc.subscribers[len(bc.subscribers)-1]
 }
 
@@ -71,19 +71,19 @@ func (bc *BaseComponent) Subscribe() chan *uuid.UUID {
 func (bc BaseComponent) Notify() {
 	if bc.subscribers != nil {
 		for _, ch := range bc.subscribers {
-			ch <- bc.id
+			ch <- *bc.id
 		}
 	}
 }
 
-func (bc BaseComponent) Id() *uuid.UUID {
-	return bc.id
+func (bc BaseComponent) Id() uuid.UUID {
+	return *bc.id
 }
 
 type Component interface {
-	Id() *uuid.UUID
+	Id() uuid.UUID
 	Entity() (*Entity, error)
 	setEntity(*Entity) error
 	Notify()
-	Subscribe() chan *uuid.UUID
+	Subscribe() chan uuid.UUID
 }

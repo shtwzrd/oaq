@@ -7,21 +7,22 @@ import (
 )
 
 var (
-	components map[*uuid.UUID]Component
+	components map[uuid.UUID]Component
 )
 
 func registerComponent(c Component) (err error) {
-	if c.Id() == nil {
+	var empty [16]byte
+	if c.Id() == empty {
 		err = errors.New("Component was never given an id and cannot be registered!")
 	}
 	if components == nil {
-		components = map[*uuid.UUID]Component{}
+		components = map[uuid.UUID]Component{}
 	}
 	components[c.Id()] = c
 	return
 }
 
-func unregisterComponent(id *uuid.UUID) (err error) {
+func unregisterComponent(id uuid.UUID) (err error) {
 	_, present := components[id]
 	if !present {
 		err = errors.New("Given id does not exist in the registry!")
@@ -30,7 +31,7 @@ func unregisterComponent(id *uuid.UUID) (err error) {
 	return
 }
 
-func FindComponent(id *uuid.UUID) (c Component, err error) {
+func FindComponent(id uuid.UUID) (c Component, err error) {
 	c, present := components[id]
 
 	if !present {
