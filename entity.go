@@ -17,8 +17,8 @@ type Entity struct {
 func NewEntity() *Entity {
 	entity := new(Entity)
 	entity.components = make(map[string]Component)
-	var err error
-	entity.id, err = uuid.NewV4()
+	uid, err := uuid.NewV4()
+	entity.id = *uid
 	if err != nil {
 		fmt.Println("UUID error: ", err)
 	}
@@ -76,14 +76,30 @@ func (en *Entity) Add(c Component) (err error) {
 // a Component that the Entity did not have.
 func (en *Entity) Remove(c Component) (err error) {
 	t := reflect.TypeOf(c)
-	_, present := en.components[t.String()]
+	if t == reflect.TypeOf(en) {
+		ent := c.(*Entity)
+		_, present := en.components[ent.Name]
 
-	if present {
-		delete(en.components, t.String())
+		if present {
+			delete(en.components, ent.Name)
+			unregisterComponent(c.Id())
+		} else {
+			errmsg := fmt.Sprintf(`Entity with reference %v has no
+			Entity with name %s`, &en, ent.Name)
+			err = errors.New(errmsg)
+		}
+
 	} else {
-		errmsg := fmt.Sprintf(`Entity with reference %v has no 
+		_, present := en.components[t.String()]
+
+		if present {
+			delete(en.components, t.String())
+			unregisterComponent(c.Id())
+		} else {
+			errmsg := fmt.Sprintf(`Entity with reference %v has no
 			component of type %v`, &en, t)
-		err = errors.New(errmsg)
+			err = errors.New(errmsg)
+		}
 	}
 	en.Notify() // Is anybody out there? I lost a component!
 	return

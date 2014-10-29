@@ -17,7 +17,7 @@ import (
 type BaseComponent struct {
 	entity      *Entity
 	subscribers []chan uuid.UUID
-	id          *uuid.UUID
+	id          uuid.UUID
 }
 
 func (bc BaseComponent) Entity() (en *Entity, err error) {
@@ -28,7 +28,7 @@ func (bc BaseComponent) Entity() (en *Entity, err error) {
 	return
 }
 
-func (bc BaseComponent) setEntity(en *Entity) (err error) {
+func (bc *BaseComponent) setEntity(en *Entity) (err error) {
 	if en == nil {
 		err = errors.New("Provided Entity was nil!")
 		return
@@ -38,8 +38,10 @@ func (bc BaseComponent) setEntity(en *Entity) (err error) {
 	// for a component -- they're just structs with Plain-Old-Data.
 
 	//Entities assign their own id on creation, and that shouldn't be reassigned
-	if bc.id == nil { //If not nil, this component must be an Entity itself
-		bc.id, err = uuid.NewV4()
+	var empty [16]byte
+	if bc.id == empty { //If not empty, this component must be an Entity itself
+		var uid, _ = uuid.NewV4()
+		bc.id = *uid
 		bc.entity = en
 		registerComponent(bc)
 	}
@@ -50,7 +52,7 @@ func (bc BaseComponent) setEntity(en *Entity) (err error) {
 // receive a channel the Component can use to send its UUID to the Processor
 // whenever Notify is fired. Subscribe is lazy-initialized -- no slice of
 // channels is created until a Processor has subscribed to the Component.
-func (bc BaseComponent) Subscribe() chan uuid.UUID {
+func (bc *BaseComponent) Subscribe() chan uuid.UUID {
 	if bc.subscribers == nil {
 		bc.subscribers = make([]chan uuid.UUID, 0)
 	}
@@ -71,16 +73,18 @@ func (bc BaseComponent) Subscribe() chan uuid.UUID {
 func (bc BaseComponent) Notify() {
 	if bc.subscribers != nil {
 		for _, ch := range bc.subscribers {
-			ch <- *bc.id
+			ch <- bc.id
 		}
 	}
 }
 
 func (bc BaseComponent) Id() uuid.UUID {
-	if bc.id == nil {
-		bc.id, _ = uuid.NewV4()
+	var empty [16]byte
+	if bc.id == empty {
+		uid, _ := uuid.NewV4()
+		bc.id = *uid
 	}
-	return *bc.id
+	return bc.id
 }
 
 type Component interface {

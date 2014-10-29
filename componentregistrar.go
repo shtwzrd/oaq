@@ -2,8 +2,7 @@ package oaq
 
 import (
 	"errors"
-	"fmt"
-	
+
 	uuid "github.com/nu7hatch/gouuid"
 )
 
@@ -33,11 +32,8 @@ func unregisterComponent(id uuid.UUID) (err error) {
 }
 
 func FindComponent(id uuid.UUID) (c Component, err error) {
-	//	fmt.Println(components)
-		fmt.Println("")
 	c, present := components[id]
-	//	fmt.Println(id)
-	
+
 	if !present {
 		err = errors.New("Given id does not exist in the registry!")
 	}
