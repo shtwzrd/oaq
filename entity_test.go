@@ -24,6 +24,55 @@ func TestAddComponent(t *testing.T) {
 
 }
 
+func TestAddEntity(t *testing.T) {
+	entity := NewEntity()
+	subentity := NewNamedEntity("test")
+
+	err := entity.Add(subentity)
+
+	if err != nil {
+		t.Error("Failed to add an Entity as a Component")
+	} else {
+		t.Log("TestAddEntity: PASS")
+	}
+}
+
+func TestAddUnnamedEntity(t *testing.T) {
+	entity := NewEntity()
+	unnamedentity := NewEntity()
+
+	err := entity.Add(unnamedentity)
+
+	if err == nil {
+		t.Error("Adding an unnamed Entity should fail, but it succeeded")
+	} else {
+		t.Log("TestAddUnnamedEntity: PASS")
+	}
+}
+
+func TestAddExistingEntity(t *testing.T) {
+	entity := NewEntity()
+	subentityA := NewNamedEntity("turnip")
+	subentityB := NewNamedEntity("turnip")
+
+	entity.Add(subentityA)
+
+	_, present := entity.components[subentityA.Name];
+
+	if !present {
+		t.Error("Entity does not store Entities by name")
+	}
+
+	err := entity.Add(subentityB)
+
+
+	if err == nil {
+		t.Error("Adding an unnamed Entity should fail, but it succeeded")
+	} else {
+		t.Log("TestAddExistingEntity: PASS")
+	}
+}
+
 func TestAddExistingComponent(t *testing.T) {
 	c := new(TestComponent)
 	d := new(TestComponent)
@@ -56,7 +105,6 @@ func TestRemoveComponent(t *testing.T) {
 	} else {
 		t.Log("TestRemoveComponent: PASS")
 	}
-
 }
 
 func TestRemoveNonExistingComponent(t *testing.T) {
@@ -93,5 +141,30 @@ func TestGetEntityOfRootEntity(t *testing.T) {
 			" component of any other Entity) should result in an error.")
 	} else {
 		t.Log("TestGetEntityOfRootEntity: PASS")
+	}
+}
+
+func TestFindComponent(t *testing.T) {
+	c := new(TestComponent)
+	d := new(AnotherComponent)
+	entity := NewEntity()
+
+	entity.Add(c)
+	entity.Add(d)
+	entity.Remove(d)
+
+	_, wontError := FindComponent(c.Id())
+	_, willError := FindComponent(d.Id())
+
+	if wontError != nil {
+		t.Error(`ComponentRegistrar cannot find the component, even
+                though it's still attached to the Entity`)
+	}
+	if willError == nil {
+		t.Error(`ComponenetRegistrar can still find the component, even
+                though it has been removed from the entity`)
+	}
+	if wontError == nil && willError != nil {
+		t.Log("TestAddExistingComponent: PASS")
 	}
 }

@@ -6,7 +6,7 @@ package oaq
 
 import (
 	"errors"
-
+	"fmt"
 	uuid "github.com/nu7hatch/gouuid"
 )
 
@@ -20,6 +20,11 @@ type BaseComponent struct {
 	id          *uuid.UUID
 }
 
+func (bc BaseComponent) init() {
+	var uid, _ = uuid.NewV4()
+	bc = BaseComponent{ id: uid }
+}
+
 func (bc BaseComponent) Entity() (en *Entity, err error) {
 	if bc.entity == nil {
 		err = errors.New(`Component has no Entity; it is itself either a root
@@ -28,7 +33,7 @@ func (bc BaseComponent) Entity() (en *Entity, err error) {
 	return
 }
 
-func (bc *BaseComponent) setEntity(en *Entity) (err error) {
+func (bc BaseComponent) setEntity(en *Entity) (err error) {
 	if en == nil {
 		err = errors.New("Provided Entity was nil!")
 		return
@@ -38,11 +43,12 @@ func (bc *BaseComponent) setEntity(en *Entity) (err error) {
 	// for a component -- they're just structs with Plain-Old-Data.
 
 	//Entities assign their own id on creation, and that shouldn't be reassigned
-	if bc.id == nil { //If not nil, this component must be an Entity itself
-		bc.id, err = uuid.NewV4()
+	if bc.id == nil  {
+		bc.init()
+	} else {
 		bc.entity = en
-		registerComponent(bc)
 	}
+	//registerComponent(bc)
 	return
 }
 
@@ -50,11 +56,10 @@ func (bc *BaseComponent) setEntity(en *Entity) (err error) {
 // receive a channel the Component can use to send its UUID to the Processor
 // whenever Notify is fired. Subscribe is lazy-initialized -- no slice of
 // channels is created until a Processor has subscribed to the Component.
-func (bc *BaseComponent) Subscribe() chan uuid.UUID {
+func (bc BaseComponent) Subscribe() chan uuid.UUID {
 	if bc.subscribers == nil {
 		bc.subscribers = make([]chan uuid.UUID, 0)
 	}
-
 	//Add our new subscriber
 	var ch chan uuid.UUID
 	bc.subscribers = append(bc.subscribers, ch)
@@ -77,7 +82,12 @@ func (bc BaseComponent) Notify() {
 }
 
 func (bc BaseComponent) Id() uuid.UUID {
-	return *bc.id
+	var empty [16]byte
+	fmt.Println("Id() called")
+	if &bc != nil {
+		return *bc.id
+	}
+	return empty
 }
 
 type Component interface {
@@ -86,4 +96,5 @@ type Component interface {
 	setEntity(*Entity) error
 	Notify()
 	Subscribe() chan uuid.UUID
+	init()
 }
