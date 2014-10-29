@@ -1,6 +1,8 @@
 package oaq
 
-import "testing"
+import( "testing"
+)
+
 
 type TestComponent struct {
 	BaseComponent
@@ -13,7 +15,7 @@ type AnotherComponent struct {
 func TestAddComponent(t *testing.T) {
 	c := new(TestComponent)
 	entity := NewEntity()
-
+	
 	err := entity.Add(c)
 	if err != nil {
 		t.Error("Adding a Component to an Entity failed, even though the Entity " +
@@ -21,15 +23,15 @@ func TestAddComponent(t *testing.T) {
 	} else {
 		t.Log("TestAddComponent: PASS")
 	}
-
+	
 }
 
 func TestAddEntity(t *testing.T) {
 	entity := NewEntity()
 	subentity := NewNamedEntity("test")
-
+	
 	err := entity.Add(subentity)
-
+	
 	if err != nil {
 		t.Error("Failed to add an Entity as a Component")
 	} else {
@@ -40,9 +42,9 @@ func TestAddEntity(t *testing.T) {
 func TestAddUnnamedEntity(t *testing.T) {
 	entity := NewEntity()
 	unnamedentity := NewEntity()
-
+	
 	err := entity.Add(unnamedentity)
-
+	
 	if err == nil {
 		t.Error("Adding an unnamed Entity should fail, but it succeeded")
 	} else {
@@ -54,20 +56,20 @@ func TestAddExistingEntity(t *testing.T) {
 	entity := NewEntity()
 	subentityA := NewNamedEntity("turnip")
 	subentityB := NewNamedEntity("turnip")
-
+	
 	entity.Add(subentityA)
-
+	
 	_, present := entity.components[subentityA.Name];
-
 	if !present {
 		t.Error("Entity does not store Entities by name")
 	}
-
+	
 	err := entity.Add(subentityB)
-
-
+	
+	
 	if err == nil {
-		t.Error("Adding an unnamed Entity should fail, but it succeeded")
+		t.Error(`Adding an Entity with the same name as an already added
+			one should fail, but it succeeded`)
 	} else {
 		t.Log("TestAddExistingEntity: PASS")
 	}
@@ -144,18 +146,45 @@ func TestGetEntityOfRootEntity(t *testing.T) {
 	}
 }
 
+func TestEntityIDPersists(t *testing.T) {
+	entity := NewEntity()
+
+	subentity := NewNamedEntity("sub")
+	entity.Add(subentity)
+	_, ok := FindComponent(subentity.Id())
+	if ok != nil {
+		t.Error(`The Id on this side doesn't match the one in the
+componentregistrar`)
+	} else {
+		t.Log(`TestEntityIDPersists: PASS`)
+	}
+}
+func TestComponentIDPersists(t *testing.T) {
+	entity := NewEntity()
+
+	component := new(TestComponent)
+	entity.Add(component)
+	_, ok := FindComponent(component.Id())
+	if ok != nil {
+		t.Error(`The Id on this side doesn't match the one in the
+componentregistrar`)
+	} else {
+		t.Log(`TestComponentIDPersists: PASS`)
+	}
+}
+
 func TestFindComponent(t *testing.T) {
 	c := new(TestComponent)
 	d := new(AnotherComponent)
 	entity := NewEntity()
-
+	
 	entity.Add(c)
 	entity.Add(d)
 	entity.Remove(d)
-
+	
 	_, wontError := FindComponent(c.Id())
 	_, willError := FindComponent(d.Id())
-
+	
 	if wontError != nil {
 		t.Error(`ComponentRegistrar cannot find the component, even
                 though it's still attached to the Entity`)

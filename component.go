@@ -28,7 +28,7 @@ func (bc BaseComponent) Entity() (en *Entity, err error) {
 	return
 }
 
-func (bc *BaseComponent) setEntity(en *Entity) (err error) {
+func (bc BaseComponent) setEntity(en *Entity) (err error) {
 	if en == nil {
 		err = errors.New("Provided Entity was nil!")
 		return
@@ -50,7 +50,7 @@ func (bc *BaseComponent) setEntity(en *Entity) (err error) {
 // receive a channel the Component can use to send its UUID to the Processor
 // whenever Notify is fired. Subscribe is lazy-initialized -- no slice of
 // channels is created until a Processor has subscribed to the Component.
-func (bc *BaseComponent) Subscribe() chan uuid.UUID {
+func (bc BaseComponent) Subscribe() chan uuid.UUID {
 	if bc.subscribers == nil {
 		bc.subscribers = make([]chan uuid.UUID, 0)
 	}
@@ -77,6 +77,9 @@ func (bc BaseComponent) Notify() {
 }
 
 func (bc BaseComponent) Id() uuid.UUID {
+	if bc.id == nil {
+		bc.id, _ = uuid.NewV4()
+	}
 	return *bc.id
 }
 

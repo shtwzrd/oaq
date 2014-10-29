@@ -10,13 +10,13 @@ import (
 
 type Entity struct {
 	BaseComponent
-	components map[reflect.Type]Component
-	name       string
+	components map[string]Component
+	Name       string
 }
 
 func NewEntity() *Entity {
 	entity := new(Entity)
-	entity.components = make(map[reflect.Type]Component)
+	entity.components = make(map[string]Component)
 	var err error
 	entity.id, err = uuid.NewV4()
 	if err != nil {
@@ -28,7 +28,7 @@ func NewEntity() *Entity {
 
 func NewNamedEntity(name string) (en *Entity) {
 	en = NewEntity()
-	en.name = name
+	en.Name = name
 	return
 }
 
@@ -36,15 +36,37 @@ func NewNamedEntity(name string) (en *Entity) {
 // a Component of the same type.
 func (en *Entity) Add(c Component) (err error) {
 	t := reflect.TypeOf(c)
-	_, present := en.components[t]
 
-	if present {
-		errmsg := fmt.Sprintf(`Entity with reference %v is already assigned a  
+	if t == reflect.TypeOf(en) {
+		ent := c.(*Entity)
+		if ent.Name != "" {
+			_, present := en.components[ent.Name]
+
+			if present {
+				errmsg := fmt.Sprintf(`Entity with reference %v is already assigned a  
 			component of type %v`, &en, t)
-		err = errors.New(errmsg)
+				err = errors.New(errmsg)
+			} else {
+				en.components[ent.Name] = c
+				c.setEntity(en) //Give the Component a reference to this Entity
+			}
+		} else {
+			errmsg := fmt.Sprintf(`Cannot add an Unnamed Entity as a
+                        component.`)
+			err = errors.New(errmsg)
+		}
+
 	} else {
-		en.components[t] = c
-		c.setEntity(en) //Give the Component a reference to this Entity
+		_, present := en.components[t.String()]
+
+		if present {
+			errmsg := fmt.Sprintf(`Entity with reference %v is already assigned a  
+			component of type %v`, &en, t)
+			err = errors.New(errmsg)
+		} else {
+			en.components[t.String()] = c
+			c.setEntity(en) //Give the Component a reference to this Entity
+		}
 	}
 	en.Notify() // Let interested Processors know we changed
 	return
@@ -54,10 +76,10 @@ func (en *Entity) Add(c Component) (err error) {
 // a Component that the Entity did not have.
 func (en *Entity) Remove(c Component) (err error) {
 	t := reflect.TypeOf(c)
-	_, present := en.components[t]
+	_, present := en.components[t.String()]
 
 	if present {
-		delete(en.components, t)
+		delete(en.components, t.String())
 	} else {
 		errmsg := fmt.Sprintf(`Entity with reference %v has no 
 			component of type %v`, &en, t)
